@@ -18,12 +18,12 @@ services:
       - "4200:4200"
     labels:
       traefik.enable: "true"
-      traefik.http.routers.node.rule: Host(`node.docker.localhost`)
+      traefik.http.routers.node.rule: Host(`node.conduit3.com`)
       traefik.http.routers.node.entrypoints: http
       traefik.http.routers.node.service: node
       traefik.http.services.node.loadbalancer.server.port: 4200
 
-      traefik.tcp.routers.nodered-debug.rule: Host(`nodered-debug.docker.localhost`) 
+      traefik.tcp.routers.nodered-debug.rule: Host(`node-debug.conduit3.com`) 
       traefik.tcp.routers.nodered-debug.entrypoints: http
       traefik.tcp.routers.nodered-debug.service: nodered-debug
       traefik.tcp.services.nodered-debug.loadbalancer.server.port: 9229
