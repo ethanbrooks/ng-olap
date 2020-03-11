@@ -17,7 +17,7 @@ export class OlapComponent {
             fields: [],
             store: {
                 type: 'xmla',
-                url: 'https://olaper.conduit3.com/olaper/xmla',
+                url: '/olaper/xmla',
                 catalog: 'Adventure Works DW Standard Edition',
                 cube: 'Adventure Works'
             }
