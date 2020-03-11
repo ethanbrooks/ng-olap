@@ -1,0 +1,86 @@
+version: '3.7'
+services:
+  traefik:
+    image: traefik:latest
+    entrypoint: /usr/local/bin/traefik
+    command:
+        - --entrypoints.http.address=:80
+        - --entrypoints.https.address=:443
+        - --entrypoints.nodered-debug.address=:9229
+#          - --entrypoints.mongodb.address=:27017
+#            - --entrypoints.mysql.address=:3306
+        - --providers.docker.exposedbydefault=false
+        - --providers.docker.network=docker-Traefik_private
+        - --api
+        - --log.level=DEBUG
+        - --log.filePath=/var/log/traefik.log
+    labels:
+        # Dashboard
+        traefik.enable: "true"
+        traefik.http.routers.traefik.rule: Host(`traefik.docker.localhost`)
+        traefik.http.routers.traefik.service: api@internal
+        traefik.http.routers.traefik.entrypoints: http        
+    ports:
+        - 80:80
+        - 443:443
+        - 27017:27017
+#            - 3306:3306
+    volumes:
+#            - ./traefik/supervisord.conf:/etc/supervisord.conf:ro
+        - /var/run/docker.sock:/var/run/docker.sock
+        - ./traefik/beats/filebeat/conf/:/etc/filebeat/:ro
+        - ./traefik/beats/filebeat/log/:/var/log/filebeat:rw
+        - ./traefik/beats/filebeat/data/:/var/lib/filebeat/:rw
+    networks:
+        - private
+        - public
+  node:
+    build:
+      context: .
+      args:
+        - NODE_ENV=development
+    # you can use legacy debug config or new inspect
+    # NOTE: if nodemon isn't restarting on changes, you might be on Windows
+    # which has trouble seeing file changes, so add -L to use legacy polling
+    # https://github.com/remy/nodemon#application-isnt-restarting
+    #command: ../node_modules/.bin/nodemon --debug=0.0.0.0:5858
+#    command: ../node_modules/.bin/nodemon --inspect=0.0.0.0:9229 ./bin/www
+    command: npm start
+    ports:
+      - "9229:9229"
+      - "9230:9230"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.node.rule: Host(`node.docker.localhost`)
+      traefik.http.routers.node.entrypoints: http
+      traefik.http.routers.node.service: node
+      traefik.http.services.node.loadbalancer.server.port: 4200
+
+      traefik.tcp.routers.nodered-debug.rule: Host(`nodered-debug.docker.localhost`) 
+      traefik.tcp.routers.nodered-debug.entrypoints: http
+      traefik.tcp.routers.nodered-debug.service: nodered-debug
+      traefik.tcp.services.nodered-debug.loadbalancer.server.port: 9229
+
+      traefik.http.routers.nodered.rule: (PathPrefix(`/admin/`, `/api/`) &&  Host(`node.docker.localhost`))
+      traefik.http.routers.nodered.entrypoints: http
+      traefik.http.routers.nodered.service: nodered
+      traefik.http.services.nodered.loadbalancer.server.port: 3000
+    volumes:
+      - .:/opt/node_app/app:delegated
+      - ./package.json:/opt/node_app/package.json
+      - ./package-lock.json:/opt/node_app/package-lock.json
+      - notused:/opt/node_app/app/node_modules
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      disable: true
+    networks:
+      - private
+    user: root
+volumes:
+  notused:
+  nodered_projects:
+  nodered_node_modules:
+networks:
+  public:
+  private:
