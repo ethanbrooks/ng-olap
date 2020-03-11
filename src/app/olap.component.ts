@@ -18,8 +18,8 @@ export class OlapComponent {
             store: {
                 type: 'xmla',
                 url: '/olaper/xmla',
-                catalog: 'Adventure Works DW Standard Edition',
-                cube: 'Adventure Works'
+                catalog: 'Foodmart',
+                cube: 'Store sales'
             }
         };
     }
