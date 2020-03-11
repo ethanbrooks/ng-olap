@@ -1,39 +1,5 @@
 version: '3.7'
 services:
-  traefik:
-    image: traefik:latest
-    entrypoint: /usr/local/bin/traefik
-    command:
-        - --entrypoints.http.address=:80
-        - --entrypoints.https.address=:443
-        - --entrypoints.nodered-debug.address=:9229
-#          - --entrypoints.mongodb.address=:27017
-#            - --entrypoints.mysql.address=:3306
-        - --providers.docker.exposedbydefault=false
-        - --providers.docker.network=docker-Traefik_private
-        - --api
-        - --log.level=DEBUG
-        - --log.filePath=/var/log/traefik.log
-    labels:
-        # Dashboard
-        traefik.enable: "true"
-        traefik.http.routers.traefik.rule: Host(`traefik.docker.localhost`)
-        traefik.http.routers.traefik.service: api@internal
-        traefik.http.routers.traefik.entrypoints: http        
-    ports:
-        - 80:80
-        - 443:443
-        - 27017:27017
-#            - 3306:3306
-    volumes:
-#            - ./traefik/supervisord.conf:/etc/supervisord.conf:ro
-        - /var/run/docker.sock:/var/run/docker.sock
-        - ./traefik/beats/filebeat/conf/:/etc/filebeat/:ro
-        - ./traefik/beats/filebeat/log/:/var/log/filebeat:rw
-        - ./traefik/beats/filebeat/data/:/var/lib/filebeat/:rw
-    networks:
-        - private
-        - public
   node:
     build:
       context: .
