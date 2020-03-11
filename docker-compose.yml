@@ -1,10 +1,11 @@
 version: '3.7'
 services:
   node:
-    build:
-      context: .
-      args:
-        - NODE_ENV=development
+    image: ng-olap_node:latest
+    # build:
+    #   context: .
+    #   args:
+    #     - NODE_ENV=development
     # you can use legacy debug config or new inspect
     # NOTE: if nodemon isn't restarting on changes, you might be on Windows
     # which has trouble seeing file changes, so add -L to use legacy polling
@@ -12,22 +13,39 @@ services:
     #command: ../node_modules/.bin/nodemon --debug=0.0.0.0:5858
 #    command: ../node_modules/.bin/nodemon --inspect=0.0.0.0:9229 ./bin/www
     command: npm start
-    ports:
-      - "9229:9229"
-      - "9230:9230"
-      - "4200:4200"
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.node.rule: Host(`node.conduit3.com`)
-      traefik.http.routers.node.entrypoints: http
-      traefik.http.routers.node.service: node
-      traefik.http.services.node.loadbalancer.server.port: 4200
-
-      traefik.tcp.routers.nodered-debug.rule: Host(`node-debug.conduit3.com`) 
-      traefik.tcp.routers.nodered-debug.entrypoints: http
-      traefik.tcp.routers.nodered-debug.service: nodered-debug
-      traefik.tcp.services.nodered-debug.loadbalancer.server.port: 9229
-
+    deploy:
+      labels:
+        traefik.enable: "true"
+        traefik.http.routers.node.rule: Host(`node.conduit3.com`)
+        traefik.http.routers.node.tls: "true"          
+        traefik.http.routers.node.entrypoints: https
+        traefik.http.routers.node.service: node
+        traefik.http.services.node.loadbalancer.server.port: 4200
+  #      traefik.tcp.routers.nodered-debug.rule: Host(`node-debug.conduit3.com`) 
+  #      traefik.tcp.routers.nodered-debug.entrypoints: http
+  #      traefik.tcp.routers.nodered-debug.service: nodered-debug
+  #      traefik.tcp.services.nodered-debug.loadbalancer.server.port: 9229
+      replicas: 1
+      placement:
+          constraints:
+              - node.role == manager
+          preferences:
+              - spread: node.labels.zone
+      update_config:
+          parallelism: 1
+          delay: 10s
+      resources:
+          limits:
+              cpus: '1'
+              memory: 500M
+          reservations:
+  #             cpus: '1'
+              memory: 100M
+      restart_policy:
+          condition: on-failure
+          delay: 5s
+          max_attempts: 3
+          window: 10s
     volumes:
       - .:/opt/node_app/app:delegated
       - ./package.json:/opt/node_app/package.json
@@ -38,12 +56,12 @@ services:
     healthcheck:
       disable: true
     networks:
-      - private
+      docker-Traefik_private:
     user: root
 volumes:
   notused:
   nodered_projects:
   nodered_node_modules:
 networks:
-  public:
-  private:
+  docker-Traefik_private:
+    external: true
